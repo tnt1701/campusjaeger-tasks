@@ -17,7 +17,6 @@ $router->get('/', function () use ($router) {
     echo 'test';
 });
 
-
 $router->get('/posts', ['uses' => 'PostController@index']);
 $router->post('posts', ['uses' => 'PostController@store']);
 $router->put('/post/{id}', ['uses' => 'PostController@update']);
@@ -27,4 +26,3 @@ $router->delete('post/{id}', ['uses' => 'PostController@destroy']);
 $router->post('tags', ['uses' => 'TagController@store']);
 $router->put('tag/{id}', ['uses' => 'TagController@update']);
 $router->delete('tag/{id}', ['uses' => 'TagController@destroy']);
-

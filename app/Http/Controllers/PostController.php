@@ -4,23 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\Tag;
+use App\Filters\PostFilters;
 use App\Transformers\PostTransformer;
+use App\Http\Requests\PostStoreRequest;
+use App\Http\Requests\PostUpdateRequest;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    public function index(Request $request)
+    public function index(Tag $tag, PostFilters $filters)
     {
-        if ($request->has('tag')) {
-
-            $tag = Tag::where('name', $request->get('tag'))->first();
-
-            $posts = $tag->posts;
-
-            return fractal($posts, new PostTransformer())->toArray();
-        }
-
-        $posts = Post::latest()->paginate(2);
+        $posts = $this->getPosts($tag, $filters);
 
         return fractal()
             ->collection($posts)
@@ -29,19 +23,17 @@ class PostController extends Controller
             ->toArray();
     }
 
-    public function store(Request $request)
+    public function store(PostStoreRequest $request)
     {
-        $post = new Post();
+        $post = Post::create([
+            'title' => request('title'),
+            'content' => request('content'),
+            'status' => request('status'),
+            'published_at' => request('published_at'),
+            'user_id'=> request('user_id')
+        ]);
 
-        $post->title = $request->title;
-        $post->content = $request->content;
-        $post->status = $request->status;
-        $post->published_at = $request->published_at;
-        $post->user_id = $request->user_id;
-
-        $post->save();
-
-        $post->tags()->sync($request->tags);
+        $post->tags()->sync(request('tags'));
 
         return fractal()
             ->item($post)
@@ -50,18 +42,18 @@ class PostController extends Controller
             ->toArray();
     }
 
-    public function update(Request $request, $id)
+    public function update(PostUpdateRequest $request, $id)
     {
         $post = Post::findOrFail($id);
 
-        $post->title = $request->title;
-        $post->content = $request->content;
-        $post->status = $request->status;
-        $post->published_at = $request->published_at;
+        $post->update([
+            'title' => request('title'),
+            'content' => request('content'),
+            'status' => request('status'),
+            'published_at' => request('published_at')
+        ]);
 
-        $post->save();
-
-        $post->tags()->sync($request->tags);
+        $post->tags()->sync(request('tags'));
 
         return fractal()
             ->item($post)
@@ -86,5 +78,16 @@ class PostController extends Controller
         Post::findOrFail($id)->delete();
 
         return response('Deleted Sucessfully', 200);
+    }
+
+    protected function getPosts(Tag $tag, PostFilters $filters)
+    {
+        $posts = Post::latest()->filter($filters);
+
+        if ($tag->exists) {
+            $posts->whereHas('tag_id', $tag->id);
+        }
+
+        return $posts->get();
     }
 }

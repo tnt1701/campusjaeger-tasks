@@ -10,7 +10,14 @@ class TagController extends Controller
 {
     public function store(Request $request)
     {
-        $tag = Tag::create($request->all());
+        $this->validate($request, [
+            'name' => 'required'
+        ]);
+
+        $tag = new Tag();
+
+        $tag->name = $request->name;
+        $tag->save();
 
         return fractal()
             ->item($tag)
@@ -21,7 +28,13 @@ class TagController extends Controller
     public function update(Request $request, $id)
     {
         $tag = Tag::findOrFail($id);
-        $tag->update($request->all());
+
+        $this->validate($request, [
+            'name' => 'required'
+        ]);        
+
+        $tag->name = $request->name;
+        $tag->save();
 
         return fractal()
             ->item($tag)
